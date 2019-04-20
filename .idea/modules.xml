@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/QAcadScrapper/QAcadScrapper.iml" filepath="$PROJECT_DIR$/QAcadScrapper/QAcadScrapper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/QAcadTest.iml" filepath="$PROJECT_DIR$/QAcadTest.iml" />
+    </modules>
+  </component>
+</project>

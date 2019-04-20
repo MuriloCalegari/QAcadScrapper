@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="QAcadScrapper:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/QAcadScrapper_jar</output-path>
+    <root id="archive" name="QAcadScrapper.jar">
+      <element id="module-output" name="QAcadScrapper" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/QAcadScrapper/src/calegari/murilo/qacadscrapper/lib/jsoup-1.11.3.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
