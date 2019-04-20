@@ -9,7 +9,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,57 +133,13 @@ public class QAcadScrapper {
         return this.isLogged;
     }
 
-    private List<Subject> getAllSubjects() {
-
-        List<Subject> subjectsList = new ArrayList<>();
-
-        try {
-            gradesResponse = Jsoup.connect(this.url + GRADES_PAGE)
-                    .cookies(cookieMap)
-                    .execute();
-
-            if(gradesResponse != null) {
-
-                Document doc = gradesResponse.charset(PAGE_CHARSET).parse();
-
-                for(Element subjectElement : doc.select("tbody > tr > td.conteudoTexto > strong")) { // Select grades
-
-                    Subject subject = new Subject();
-
-                    // Extracts all information from subject text
-
-                    String elementText = subjectElement.ownText();
-                    int subjectId = Integer.valueOf(elementText.split(" - ")[0]);
-                    String subjectClass = elementText.split(" - ")[1];
-                    String subjectName = elementText.split(" - ")[2];
-                    String subjectProfessor = elementText.split(" - ")[elementText.split(" - ").length - 1];
-
-                    if (subjectProfessor.equals(subjectName)) { // if professor name is null, subjectProfessor should be equal to subjectName
-                        subjectProfessor = null;
-                    }
-
-                    subject.setId(subjectId);
-                    subject.setSubjectClass(subjectClass);
-                    subject.setName(subjectName);
-                    subject.setProfessor(subjectProfessor);
-
-                    subjectsList.add(subject);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return subjectsList;
-    }
-
-    public List<Subject> getAllSubjectsAndGrades(Map<String, String> cookieMap) {
+    public List<Subject> getAllSubjectsAndGrades(Map<String, String> cookieMap) throws ConnectException {
         this.cookieMap = cookieMap;
 
         return getAllSubjectsAndGrades();
     }
 
-    public List<Subject> getAllSubjectsAndGrades() {
+    public List<Subject> getAllSubjectsAndGrades() throws ConnectException {
 
         List<Subject> subjectList = new ArrayList<>();
 
@@ -262,6 +217,7 @@ public class QAcadScrapper {
             }
         } catch(Exception e){
             e.printStackTrace();
+            throw new ConnectException("QAcad: Couldn't connect to Q-Acadêmico, please check if there's an internet connection available and if Q-Acadêmico website is working");
         }
         return subjectList;
     }
