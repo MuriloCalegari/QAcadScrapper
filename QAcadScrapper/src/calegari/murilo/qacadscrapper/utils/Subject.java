@@ -47,6 +47,11 @@ public class Subject {
     public void addGrade(Grade grade) {
         grade.setAcadSubjectId(this.id);
         this.gradeList.add(grade);
+
+        if(!grade.isObtainedGradeNull()) {
+            this.obtainedGrade += grade.getObtainedGrade();
+            this.maximumGrade += grade.getMaximumGrade();
+        }
     }
 
     public List<Grade> getGradeList() {
