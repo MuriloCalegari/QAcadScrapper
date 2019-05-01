@@ -43,7 +43,7 @@ try {
 
 #### QAcadScrapper class
 
-> `loginToQAcad()`, `isLogged()` and `getAllSubjectsAndGrades()`
+> `loginToQAcad()`, `isLogged()`, `getAllSubjectsAndGrades()` and getter and setter for cookieMap.
 
 #### Subject class
 
