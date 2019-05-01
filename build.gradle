@@ -53,3 +53,18 @@ jar {
     //     https://stackoverflow.com/questions/22659463/add-classpath-in-manifest-using-gradle
     //     https://gist.github.com/simon04/6865179
 }
+
+task customFatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'calegari.murilo.qacadscrapper.QAcadScrapper',
+                'Class-Path': configurations.runtime.files.collect { "lib/$it.name" }.join(' ')
+    }
+
+    baseName = 'QAcadScrapper'
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    with jar
+}
