@@ -19,6 +19,8 @@ public class User {
     private String encryptedSubmitText;
     private String encryptedUserTypeText;
 
+    private boolean optimizeEncryptionEnabled = false;
+
     public User(String username, String password) {
         this.username = username;
         this.password = password;
@@ -46,9 +48,14 @@ public class User {
         private Context context;
 
         private Encrypter(String keyA, String keyB){
-            context = Context.enter();
-            context.setOptimizationLevel(RHINO_OPTIMIZATION_LEVEL);
+
+            if(optimizeEncryptionEnabled) {
+                context = Context.enter();
+                context.setOptimizationLevel(RHINO_OPTIMIZATION_LEVEL);
+            }
+
             engine = new RhinoScriptEngine();
+
             try {
 
                 /*
@@ -78,15 +85,15 @@ public class User {
                 e.printStackTrace();
             }
 
-            Context.exit();
+            if(optimizeEncryptionEnabled) {
+                Context.exit();
+            }
         }
 
         private String encrypt(String username) throws ScriptException {
             return (String) engine.eval(String.format("encryptedString(key, \"%s\")", username));
         }
     }
-
-
 
     public String getEncryptedUsername() {
         return encryptedUsername;
@@ -102,5 +109,19 @@ public class User {
 
     public String getEncryptedUserTypeText() {
         return encryptedUserTypeText;
+    }
+
+    public boolean isOptimizeEncryptionEnabled() {
+        return optimizeEncryptionEnabled;
+    }
+
+    /**
+     * By default the library does not optimize the encryption of fields since it might not work
+     * on some system, for example, on Android it throw a java.lang.UnsupportedOperationException
+     * @param optimizeEncryptionEnabled Should the library optimize the encryption process
+     */
+
+    public void setOptimizeEncryptionEnabled(boolean optimizeEncryptionEnabled) {
+        this.optimizeEncryptionEnabled = optimizeEncryptionEnabled;
     }
 }
