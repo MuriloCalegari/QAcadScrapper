@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/MuriloCalegari/QAcadScrapper.svg)](https://jitpack.io/#MuriloCalegari/QAcadScrapper)
+[![Release](https://jitpack.io/v/MuriloCalegari/QAcadScrapper.svg)](https://jitpack.io/#MuriloCalegari/QAcadScrapper)
 
 # QAcadScrapper
 Scrapper library that parses info from Q-Acadêmico website
