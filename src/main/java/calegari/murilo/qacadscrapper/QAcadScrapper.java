@@ -57,6 +57,7 @@ public class QAcadScrapper {
 
     private void loadAcadTokensAndCookies() throws ConnectException{
         try {
+            System.out.println("Loading tokens and cookies");
             Connection.Response tokenResponse = Jsoup.connect(this.url + KEY_GENERATOR_PAGE)
                     .method(Connection.Method.GET)
                     .execute();
@@ -103,6 +104,7 @@ public class QAcadScrapper {
             }
         }
 
+        System.out.println("QAcad: Finished login into QAcad");
         return cookieMap;
     }
 

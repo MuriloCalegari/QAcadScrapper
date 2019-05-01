@@ -1,7 +1,8 @@
 package calegari.murilo.qacadscrapper.utils;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
+import com.sun.script.javascript.RhinoScriptEngine;
+import org.mozilla.javascript.Context;
+
 import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -9,6 +10,7 @@ import java.io.InputStreamReader;
 
 public class User {
 
+    public static final int RHINO_OPTIMIZATION_LEVEL = 9;
     private String username;
     private String password;
 
@@ -40,11 +42,13 @@ public class User {
     }
 
     private class Encrypter {
-
-        private final ScriptEngine engine;
+        private RhinoScriptEngine engine;
+        private Context context;
 
         private Encrypter(String keyA, String keyB){
-            engine = new ScriptEngineManager().getEngineByName("javascript");
+            context = Context.enter();
+            context.setOptimizationLevel(RHINO_OPTIMIZATION_LEVEL);
+            engine = new RhinoScriptEngine();
             try {
 
                 /*
@@ -73,6 +77,8 @@ public class User {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            Context.exit();
         }
 
         private String encrypt(String username) throws ScriptException {
