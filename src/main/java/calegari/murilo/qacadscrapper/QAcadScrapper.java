@@ -10,7 +10,6 @@ import org.jsoup.nodes.Element;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +85,7 @@ public class QAcadScrapper {
         }
     }
 
-    public Map<String, String> loginToQAcad() throws ConnectException, LoginException {
+    public Map<String, String> loginToQAcad() throws IOException, LoginException {
         return loginToQAcad(user);
     }
 
