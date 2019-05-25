@@ -61,7 +61,7 @@ public class QAcadScrapper {
         this.user = user;
     }
 
-    public void loadAcadTokensAndCookies() throws ConnectException{
+    public void loadAcadTokensAndCookies() throws IOException{
         try {
             System.out.println("QAcad: Loading tokens and cookies");
             Connection.Response tokenResponse = Jsoup.connect(this.url + KEY_GENERATOR_PAGE)
@@ -80,9 +80,9 @@ public class QAcadScrapper {
             cookieMap = tokenResponse.cookies();
 
             System.out.println("QAcad: Finished loading tokens and cookies");
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
-            throw new ConnectException("QAcad: Couldn't connect to Q-Acadêmico, please check if there's an internet connection available and if Q-Acadêmico website is working");
+            throw new IOException("QAcad: Couldn't connect to Q-Acadêmico, please check if there's an internet connection available and if Q-Acadêmico website is working");
         }
     }
 
@@ -90,7 +90,7 @@ public class QAcadScrapper {
         return loginToQAcad(user);
     }
 
-    private Map<String, String> loginToQAcad(User user) throws ConnectException, LoginException {
+    private Map<String, String> loginToQAcad(User user) throws IOException, LoginException {
         System.out.println("QAcad: Logging into QAcad");
         loadAcadTokensAndCookies();
 
