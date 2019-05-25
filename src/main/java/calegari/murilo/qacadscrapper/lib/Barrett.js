@@ -1,27 +1,12 @@
-// BarrettMu, a class for performing Barrett modular reduction computations in
-// JavaScript.
-//
-// Requires BigInt.js.
-//
-// Copyright 2004-2005 David Shapiro.
-//
-// You may use, re-use, abuse, copy, and modify this code to your liking, but
-// please keep this header.
-//
-// Thanks!
-// 
-// Dave Shapiro
-// dave@ohdave.com 
-
 function BarrettMu(m)
 {
 	this.modulus = biCopy(m);
 	this.k = biHighIndex(this.modulus) + 1;
 	var b2k = new BigInt();
-	b2k.digits[2 * this.k] = 1; // b2k = b^(2k)
+	b2k.digits[2 * this.k] = 1;
 	this.mu = biDivide(b2k, this.modulus);
 	this.bkplus1 = new BigInt();
-	this.bkplus1.digits[this.k + 1] = 1; // bkplus1 = b^(k+1)
+	this.bkplus1.digits[this.k + 1] = 1;
 	this.modulo = BarrettMu_modulo;
 	this.multiplyMod = BarrettMu_multiplyMod;
 	this.powMod = BarrettMu_powMod;
@@ -49,10 +34,6 @@ function BarrettMu_modulo(x)
 
 function BarrettMu_multiplyMod(x, y)
 {
-	/*
-	x = this.modulo(x);
-	y = this.modulo(y);
-	*/
 	var xy = biMultiply(x, y);
 	return this.modulo(xy);
 }

@@ -9,12 +9,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class QAcadScrapper {
 
     private final String KEY_GENERATOR_PAGE = "/lib/rsa/gerador_chaves_rsa.asp?form=frmLogin&action=%2Fqacademico%2Flib%2Fvalidalogin%2Easp";
@@ -23,6 +25,8 @@ public class QAcadScrapper {
     private final String GRADES_PAGE = "/index.asp?t=2071";
     private final String NOT_LOGGED_ERROR_TEXT = "Acesso Negado";
     private final String PAGE_CHARSET = "windows-1252"; // use document.charset in chrome developer mode to obtain it.
+
+    private User user;
 
     private String url;
 
@@ -46,18 +50,20 @@ public class QAcadScrapper {
      * QAcadScrapper can extract data from the Q-Acadêmico website in a simple way
      * @param url URL in the form https://[YOUR_INSTITUTION's_Q_ACADEMICO_HOST]/qacademico, for example: https://academico3.cefetes.br/qacademico
      */
-    public QAcadScrapper(String url) {
+    public QAcadScrapper(String url, User user) {
         if(url.endsWith("/")) { // remove the final bar from the url if necessary
             // Don't know if this actually necessary but, since I'm using all URL suffixes starting with "/", it is nice to keep this
             this.url = url.substring(0, url.length() - 1);
         } else {
             this.url = url;
         }
+
+        this.user = user;
     }
 
-    private void loadAcadTokensAndCookies() throws ConnectException{
+    public void loadAcadTokensAndCookies() throws ConnectException{
         try {
-            System.out.println("Loading tokens and cookies");
+            System.out.println("QAcad: Loading tokens and cookies");
             Connection.Response tokenResponse = Jsoup.connect(this.url + KEY_GENERATOR_PAGE)
                     .method(Connection.Method.GET)
                     .execute();
@@ -73,6 +79,7 @@ public class QAcadScrapper {
 
             cookieMap = tokenResponse.cookies();
 
+            System.out.println("QAcad: Finished loading tokens and cookies");
         } catch (Exception e) {
             e.printStackTrace();
             throw new ConnectException("QAcad: Couldn't connect to Q-Acadêmico, please check if there's an internet connection available and if Q-Acadêmico website is working");
@@ -80,28 +87,29 @@ public class QAcadScrapper {
     }
 
     public Map<String, String> loginToQAcad(User user) throws ConnectException, LoginException {
-        if(!isLogged()) {
-            System.out.println("QAcad: Logging into QAcad");
-            loadAcadTokensAndCookies();
+        System.out.println("QAcad: Logging into QAcad");
+        loadAcadTokensAndCookies();
 
-            try {
-                user.encryptFields(keyA, keyB);
+        Document response = null;
+        try {
+            user.encryptFields(keyA, keyB);
 
-                Jsoup.connect(this.url + VALIDATE_LOGIN_PAGE)
-                        .data("LOGIN", user.getEncryptedUsername())
-                        .data("SENHA", user.getEncryptedPassword())
-                        .data("Submit", user.getEncryptedSubmitText())
-                        .data("TIPO_USU", user.getEncryptedUserTypeText())
-                        .cookies(cookieMap)
-                        .post();
+            System.out.println("QAcad: Validating login");
+            response = Jsoup.connect(this.url + VALIDATE_LOGIN_PAGE)
+                    .data("LOGIN", user.getEncryptedUsername())
+                    .data("SENHA", user.getEncryptedPassword())
+                    .data("Submit", user.getEncryptedSubmitText())
+                    .data("TIPO_USU", user.getEncryptedUserTypeText())
+                    .cookies(cookieMap)
+                    .post();
+            System.out.println("QAcad: Finished validating login");
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-            if (!isLogged()) {
-                throw new LoginException("Invalid credentials, please check if you can login with them directly from the website");
-            }
+        if (!isLogged(response)) {
+            throw new LoginException("Invalid credentials, please check if you can login with them directly from the website");
         }
 
         System.out.println("QAcad: Finished login into QAcad");
@@ -117,15 +125,7 @@ public class QAcadScrapper {
                         .cookies(cookieMap)
                         .execute();
 
-                Document page = loggedResponse.parse();
-
-                if (page.select(String.format("strong:contains(%s)", NOT_LOGGED_ERROR_TEXT)).isEmpty()) {
-                    isLogged = true;
-                    return true;
-                } else {
-                    isLogged = false;
-                    return false;
-                }
+                return isLogged(loggedResponse.parse());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -135,21 +135,39 @@ public class QAcadScrapper {
         return this.isLogged;
     }
 
-    public List<Subject> getAllSubjectsAndGrades(Map<String, String> cookieMap) throws ConnectException {
+    private boolean isLogged(Document page) {
+        if(page == null || cookieMap == null) {
+            isLogged = false;
+            return false;
+        } else if (page.select(String.format("strong:contains(%s)", NOT_LOGGED_ERROR_TEXT)).isEmpty()) {
+            isLogged = true;
+            return true;
+        } else {
+            isLogged = false;
+            return false;
+        }
+    }
+
+    public List<Subject> getAllSubjectsAndGrades(Map<String, String> cookieMap) throws IOException, LoginException {
         this.cookieMap = cookieMap;
 
         return getAllSubjectsAndGrades();
     }
 
-    public List<Subject> getAllSubjectsAndGrades() throws ConnectException {
+    public List<Subject> getAllSubjectsAndGrades() throws IOException, LoginException {
 
-        List<Subject> subjectList = new ArrayList<>();
+        /*
+        This method has the intention to save as many web pages loads as possible, so I automatically check
+        the login status checking for null cookies or using the same response I would use if it was already
+        logged.
+         */
 
-        if(!isLogged()) {
-            throw new IllegalStateException("Some error happended due to login status, have you called loginToQAcad()?");
-        }
+        if(cookieMap == null) {
+            loginToQAcad(user);
+            getAllSubjectsAndGrades();
+        } else {
+            System.out.println("QAcad: Getting response from grades page");
 
-        try {
             gradesResponse = Jsoup.connect(this.url + GRADES_PAGE)
                     .cookies(cookieMap)
                     .execute();
@@ -157,70 +175,85 @@ public class QAcadScrapper {
             if (gradesResponse != null) {
                 Document doc = gradesResponse.charset(PAGE_CHARSET).parse();
 
-                for (Element element : doc.select("tr.rotulo").first().parent().children()) {
-                    Subject subject = new Subject();
+                if (!isLogged(doc)) {
+                    loginToQAcad(user);
+                    getAllSubjectsAndGrades();
+                } else {
+                    return parseGradesPage(doc);
+                }
+            }
+        }
 
-                    if (!element.className().equals("rotulo")) {
+        return new ArrayList<>(); // returns empty list by default
+    }
 
-                        if (!element.children().select("strong").isEmpty()) { // If its a subject
-                            // Extracts all information from subject text
+    private List<Subject> parseGradesPage(Document gradesPage) {
+        System.out.println("QAcad: Parsing grades page");
 
-                            element = element.children().select("strong").first();
+        List<Subject> subjectList = new ArrayList<>();
 
-                            String elementText = element.ownText();
-                            int subjectId = Integer.valueOf(elementText.split(" - ")[0]);
-                            String subjectClass = elementText.split(" - ")[1];
-                            String subjectName = elementText.split(" - ")[2];
-                            String subjectProfessor = elementText.split(" - ")[elementText.split(" - ").length - 1];
+        for (Element element : gradesPage.select("tr.rotulo").first().parent().children()) {
+            Subject subject = new Subject();
 
-                            if (subjectProfessor.equals(subjectName)) { // if professor name is null, subjectProfessor should be equal to subjectName
-                                subjectProfessor = null;
-                            }
+            if (!element.className().equals("rotulo")) {
 
-                            subject.setId(subjectId);
-                            subject.setSubjectClass(subjectClass);
-                            subject.setName(subjectName);
-                            subject.setProfessor(subjectProfessor);
+                if (!element.children().select("strong").isEmpty()) { // If its a subject
+                    // Extracts all information from subject text
 
-                            subjectList.add(subject);
+                    element = element.children().select("strong").first();
+
+                    String elementText = element.ownText();
+                    int subjectId = Integer.valueOf(elementText.split(" - ")[0]);
+                    String subjectClass = elementText.split(" - ")[1];
+                    String subjectName = elementText.split(" - ")[2];
+                    String subjectProfessor = elementText.split(" - ")[elementText.split(" - ").length - 1];
+
+                    if (subjectProfessor.equals(subjectName)) { // if professor name is null, subjectProfessor should be equal to subjectName
+                        subjectProfessor = null;
+                    }
+
+                    subject.setId(subjectId);
+                    subject.setSubjectClass(subjectClass);
+                    subject.setName(subjectName);
+                    subject.setProfessor(subjectProfessor);
+
+                    subjectList.add(subject);
+                } else {
+                    // If its not a subject then we can assume the following elements are grades referring to the last added subject.
+
+                    for (Element gradeElement : element.select("tr.conteudoTexto > * tr.conteudoTexto")) {
+                        Grade grade = new Grade();
+
+                        String name = gradeElement.child(1).ownText().substring(12).split(": ")[1];
+                        grade.setName(name);
+
+                        String dateText = gradeElement.child(1).ownText().split(",")[0]; // e.g.: 03/05/2019
+                        grade.setDate(dateText);
+
+                        float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
+                        grade.setWeight(weight);
+
+                        float maximumGrade = Float.valueOf(gradeElement.child(3).ownText().split(":")[1]);
+                        grade.setMaximumGrade(maximumGrade);
+
+                        float obtainedGrade = 0f;
+                        boolean isObtainedGradeNull;
+                        if (gradeElement.child(4).ownText().split(":").length != 1) { // Meaning "if there is a grade here"
+                            isObtainedGradeNull = false;
+                            obtainedGrade = Float.valueOf(gradeElement.child(4).ownText().split(":")[1]);
                         } else {
-                            // If its not a subject then we can assume the following elements are grades referring to the last added subject.
-
-                            for (Element gradeElement : element.select("tr.conteudoTexto > * tr.conteudoTexto")) {
-                                Grade grade = new Grade();
-
-                                String name = gradeElement.child(1).ownText().substring(12).split(": ")[1];
-                                grade.setName(name);
-
-                                String dateText = gradeElement.child(1).ownText().split(",")[0]; // e.g.: 03/05/2019
-                                grade.setDate(dateText);
-
-                                float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
-                                grade.setWeight(weight);
-
-                                float maximumGrade = Float.valueOf(gradeElement.child(3).ownText().split(":")[1]);
-                                grade.setMaximumGrade(maximumGrade);
-
-                                float obtainedGrade = 0f;
-                                boolean isObtainedGradeNull;
-                                if (gradeElement.child(4).ownText().split(":").length != 1) { // Meaning "if there is a grade here"
-                                    isObtainedGradeNull = false;
-                                    obtainedGrade = Float.valueOf(gradeElement.child(4).ownText().split(":")[1]);
-                                } else {
-                                    isObtainedGradeNull = true;
-                                }
-                                grade.setObtainedGrade(obtainedGrade);
-                                grade.setIsObtainedGradeNull(isObtainedGradeNull);
-                                subjectList.get(subjectList.size() - 1).addGrade(grade);
-                            }
+                            isObtainedGradeNull = true;
                         }
+                        grade.setObtainedGrade(obtainedGrade);
+                        grade.setIsObtainedGradeNull(isObtainedGradeNull);
+                        subjectList.get(subjectList.size() - 1).addGrade(grade);
                     }
                 }
             }
-        } catch(Exception e){
-            e.printStackTrace();
-            throw new ConnectException("QAcad: Couldn't connect to Q-Acadêmico, please check if there's an internet connection available and if Q-Acadêmico website is working");
         }
+
+        System.out.println("QAcad: Finished parsing grades page");
+
         return subjectList;
     }
 
@@ -230,5 +263,13 @@ public class QAcadScrapper {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

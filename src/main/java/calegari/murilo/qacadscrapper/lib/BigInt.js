@@ -1,51 +1,3 @@
-// BigInt, a suite of routines for performing multiple-precision arithmetic in
-// JavaScript.
-//
-// Copyright 1998-2005 David Shapiro.
-//
-// You may use, re-use, abuse,
-// copy, and modify this code to your liking, but please keep this header.
-// Thanks!
-//
-// Dave Shapiro
-// dave@ohdave.com
-
-// IMPORTANT THING: Be sure to set maxDigits according to your precision
-// needs. Use the setMaxDigits() function to do this. See comments below.
-//
-// Tweaked by Ian Bunning
-// Alterations:
-// Fix bug in function biFromHex(s) to allow
-// parsing of strings of length != 0 (mod 4)
-
-// Changes made by Dave Shapiro as of 12/30/2004:
-//
-// The BigInt() constructor doesn't take a string anymore. If you want to
-// create a BigInt from a string, use biFromDecimal() for base-10
-// representations, biFromHex() for base-16 representations, or
-// biFromString() for base-2-to-36 representations.
-//
-// biFromArray() has been removed. Use biCopy() instead, passing a BigInt
-// instead of an array.
-//
-// The BigInt() constructor now only constructs a zeroed-out array.
-// Alternatively, if you pass <true>, it won't construct any array. See the
-// biCopy() method for an example of this.
-//
-// Be sure to set maxDigits depending on your precision needs. The default
-// zeroed-out array ZERO_ARRAY is constructed inside the setMaxDigits()
-// function. So use this function to set the variable. DON'T JUST SET THE
-// VALUE. USE THE FUNCTION.
-//
-// ZERO_ARRAY exists to hopefully speed up construction of BigInts(). By
-// precalculating the zero array, we can just use slice(0) to make copies of
-// it. Presumably this calls faster native code, as opposed to setting the
-// elements one at a time. I have not done any timing tests to verify this
-// claim.
-
-// Max number = 10^16 - 2 = 9999999999999998;
-//               2^53     = 9007199254740992;
-
 var biRadixBase = 2;
 var biRadixBits = 16;
 var bitsPerDigit = biRadixBits;
@@ -53,18 +5,7 @@ var biRadix = 1 << 16; // = 2^16 = 65536
 var biHalfRadix = biRadix >>> 1;
 var biRadixSquared = biRadix * biRadix;
 var maxDigitVal = biRadix - 1;
-var maxInteger = 9999999999999998; 
-
-// maxDigits:
-// Change this to accommodate your largest number size. Use setMaxDigits()
-// to change it!
-//
-// In general, if you're working with numbers of size N bits, you'll need 2*N
-// bits of storage. Each digit holds 16 bits. So, a 1024-bit key will need
-//
-// 1024 * 2 / 16 = 128 digits of storage.
-//
-
+var maxInteger = 9999999999999998;
 var maxDigits;
 var ZERO_ARRAY;
 var bigZero, bigOne;
@@ -80,11 +21,7 @@ function setMaxDigits(value)
 }
 
 setMaxDigits(20);
-
-// The maximum number of digits in base 10 you can convert to an
-// integer without JavaScript throwing up on you.
 var dpl10 = 15;
-// lr10 = 10 ^ dpl10
 var lr10 = biFromNumber(1000000000000000);
 
 function BigInt(flag)
@@ -103,7 +40,6 @@ function biFromDecimal(s)
 	var isNeg = s.charAt(0) == '-';
 	var i = isNeg ? 1 : 0;
 	var result;
-	// Skip leading zeros.
 	while (i < s.length && s.charAt(i) == '0') ++i;
 	if (i == s.length) {
 		result = new BigInt();
@@ -162,7 +98,6 @@ var hexatrigesimalToChar = new Array(
 );
 
 function biToString(x, radix)
-	// 2 <= radix <= 36
 {
 	var b = new BigInt();
 	b.digits[0] = radix;
@@ -262,7 +197,6 @@ function biFromString(s, radix)
 	var istop = isNeg ? 1 : 0;
 	var result = new BigInt();
 	var place = new BigInt();
-	place.digits[0] = 1; // radix^0
 	for (var i = s.length - 1; i >= istop; i--) {
 		var c = s.charCodeAt(i);
 		var digit = charToHex(c);
@@ -316,24 +250,19 @@ function biSubtract(x, y)
 		for (var i = 0; i < x.digits.length; ++i) {
 			n = x.digits[i] - y.digits[i] + c;
 			result.digits[i] = n % biRadix;
-			// Stupid non-conforming modulus operation.
 			if (result.digits[i] < 0) result.digits[i] += biRadix;
 			c = 0 - Number(n < 0);
 		}
-		// Fix up the negative sign, if any.
 		if (c == -1) {
 			c = 0;
 			for (var i = 0; i < x.digits.length; ++i) {
 				n = 0 - result.digits[i] + c;
 				result.digits[i] = n % biRadix;
-				// Stupid non-conforming modulus operation.
 				if (result.digits[i] < 0) result.digits[i] += biRadix;
 				c = 0 - Number(n < 0);
 			}
-			// Result is opposite sign of arguments.
 			result.isNeg = !x.isNeg;
 		} else {
-			// Result is same sign.
 			result.isNeg = x.isNeg;
 		}
 	}
@@ -375,11 +304,9 @@ function biMultiply(x, y)
 			uv = result.digits[k] + x.digits[j] * y.digits[i] + c;
 			result.digits[k] = uv & maxDigitVal;
 			c = uv >>> biRadixBits;
-			//c = Math.floor(uv / biRadix);
 		}
 		result.digits[i + n + 1] = c;
 	}
-	// Someone give me a logical xor, please.
 	result.isNeg = x.isNeg != y.isNeg;
 	return result;
 }
@@ -395,7 +322,6 @@ function biMultiplyDigit(x, y)
 		uv = result.digits[j] + x.digits[j] * y + c;
 		result.digits[j] = uv & maxDigitVal;
 		c = uv >>> biRadixBits;
-		//c = Math.floor(uv / biRadix);
 	}
 	result.digits[1 + n] = c;
 	return result;
@@ -497,14 +423,12 @@ function biDivideModulo(x, y)
 	var origYIsNeg = y.isNeg;
 	var q, r;
 	if (nb < tb) {
-		// |x| < |y|
 		if (x.isNeg) {
 			q = biCopy(bigOne);
 			q.isNeg = !y.isNeg;
 			x.isNeg = false;
 			y.isNeg = false;
 			r = biSubtract(y, x);
-			// Restore signs, 'cause they're references.
 			x.isNeg = true;
 			y.isNeg = origYIsNeg;
 		} else {
@@ -516,8 +440,6 @@ function biDivideModulo(x, y)
 
 	q = new BigInt();
 	r = x;
-
-	// Normalize Y.
 	var t = Math.ceil(tb / bitsPerDigit) - 1;
 	var lambda = 0;
 	while (y.digits[t] < biHalfRadix) {
@@ -526,10 +448,8 @@ function biDivideModulo(x, y)
 		++tb;
 		t = Math.ceil(tb / bitsPerDigit) - 1;
 	}
-	// Shift r over to keep the quotient constant. We'll shift the
-	// remainder back at the end.
 	r = biShiftLeft(r, lambda);
-	nb += lambda; // Update the bit count for x.
+	nb += lambda;
 	var n = Math.ceil(nb / bitsPerDigit) - 1;
 
 	var b = biMultiplyByRadixPower(y, n - t);
@@ -565,7 +485,6 @@ function biDivideModulo(x, y)
 		}
 	}
 	r = biShiftRight(r, lambda);
-	// Fiddle with the signs and stuff to make sure that 0 <= r < y.
 	q.isNeg = x.isNeg != origYIsNeg;
 	if (x.isNeg) {
 		if (origYIsNeg) {
@@ -576,7 +495,6 @@ function biDivideModulo(x, y)
 		y = biShiftRight(y, lambda);
 		r = biSubtract(y, r);
 	}
-	// Check for the unbelievably stupid degenerate case of r == -0.
 	if (r.digits[0] == 0 && biHighIndex(r) == 0) r.isNeg = false;
 
 	return new Array(q, r);

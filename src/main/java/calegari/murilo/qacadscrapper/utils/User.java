@@ -7,19 +7,30 @@ import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class User {
 
+    private boolean optimizeEncryptionEnabled = false;
+
+    private boolean multiThreadEnabled = false;
     public static final int RHINO_OPTIMIZATION_LEVEL = 9;
+
     private String username;
     private String password;
 
-    private String encryptedUsername;
-    private String encryptedPassword;
-    private String encryptedSubmitText;
-    private String encryptedUserTypeText;
+    private List<Field> fieldsToEncrypt = new ArrayList<>();
+    private Map<String, String> encryptedFields = new HashMap<>();
 
-    private boolean optimizeEncryptionEnabled = false;
+    private List<Thread> activeThreads = new ArrayList<>();
+
+    private final String USERNAME_KEY = "usernamekey";
+    private final String PASSWORD_KEY = "passwordkey";
+    private final String SUBMIT_TEXT_KEY = "submittextkey";
+    private final String USERTYPE_TEXT_KEY = "usertypetextkey";
 
     public User(String username, String password) {
         this.username = username;
@@ -28,18 +39,78 @@ public class User {
 
     public void encryptFields(String keyA, String keyB) {
 
+        fieldsToEncrypt.add(new Field(USERNAME_KEY, username));
+        fieldsToEncrypt.add(new Field(PASSWORD_KEY, password));
+        fieldsToEncrypt.add(new Field(SUBMIT_TEXT_KEY, "OK"));
+        fieldsToEncrypt.add(new Field(USERTYPE_TEXT_KEY, "1"));
+
         try {
             System.out.println("QAcad: Encrypting fields...");
-            Encrypter encrypter = new Encrypter(keyA, keyB);
 
-            encryptedUsername = encrypter.encrypt(username);
-            encryptedPassword = encrypter.encrypt(password);
-            encryptedSubmitText = encrypter.encrypt("OK");
-            encryptedUserTypeText = encrypter.encrypt("1");
+            if(multiThreadEnabled) {
+                encryptFieldsSingleOrMultiThreaded(fieldsToEncrypt, keyA, keyB, true);
+
+                for (int i = activeThreads.size() - 1; i >= 0; i--) {
+                    // We have to wait until all threads are done to proceed.
+                    activeThreads.get(i).join();
+                    activeThreads.remove(i);
+                }
+            } else {
+                encryptFieldsSingleOrMultiThreaded(fieldsToEncrypt, keyA, keyB, false);
+            }
+
             System.out.println("QAcad: Done encrypting fields...");
-
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void encryptFieldsSingleOrMultiThreaded(List<Field> fields, String keyA, String keyB, boolean multiThreadEnabled) {
+        Encrypter encrypter = null;
+
+        if(!multiThreadEnabled) {
+            // If multiThread is not enabled, then use a single encrypter instance for all the sequential encryptions
+            encrypter = new Encrypter(keyA, keyB);
+        }
+
+        // Encrypts the fields from the last one to the first so when removing the field from fieldsToEncrypt it doesn't
+        // alter other fields indexes
+
+        for (int i = fields.size() - 1; i >= 0; i--) {
+            Field field = fields.get(i);
+
+            if(multiThreadEnabled) {
+                Thread encryptionThread = new Thread(() -> {
+                    try {
+                        // I have to call a new encrypter instance for every field since concurrency on the same context was
+                        // breaking the encryption
+
+                        Encrypter singleRunEncrypter = new Encrypter(keyA, keyB);
+                        field.encryptedField = singleRunEncrypter.encrypt(field.plainTextField);
+                        singleRunEncrypter.exit();
+
+                        encryptedFields.put(field.fieldKey, field.encryptedField);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+
+                activeThreads.add(encryptionThread);
+                encryptionThread.start();
+            } else {
+                try {
+                    field.encryptedField = encrypter.encrypt(field.plainTextField);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                encryptedFields.put(field.fieldKey, field.encryptedField);
+            }
+
+            fieldsToEncrypt.remove(i);
+        }
+
+        if(!multiThreadEnabled) {
+            encrypter.exit();
         }
     }
 
@@ -84,31 +155,33 @@ public class User {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            if(optimizeEncryptionEnabled) {
-                Context.exit();
-            }
         }
 
         private String encrypt(String username) throws ScriptException {
             return (String) engine.eval(String.format("encryptedString(key, \"%s\")", username));
         }
+
+        private void exit() {
+            if (optimizeEncryptionEnabled) {
+                Context.exit();
+            }
+        }
     }
 
     public String getEncryptedUsername() {
-        return encryptedUsername;
+        return encryptedFields.get(USERNAME_KEY);
     }
 
     public String getEncryptedPassword() {
-        return encryptedPassword;
+        return encryptedFields.get(PASSWORD_KEY);
     }
 
     public String getEncryptedSubmitText() {
-        return encryptedSubmitText;
+        return encryptedFields.get(SUBMIT_TEXT_KEY);
     }
 
     public String getEncryptedUserTypeText() {
-        return encryptedUserTypeText;
+        return encryptedFields.get(USERTYPE_TEXT_KEY);
     }
 
     public boolean isOptimizeEncryptionEnabled() {
@@ -123,5 +196,31 @@ public class User {
 
     public void setOptimizeEncryptionEnabled(boolean optimizeEncryptionEnabled) {
         this.optimizeEncryptionEnabled = optimizeEncryptionEnabled;
+    }
+
+    public void setMultiThreadEnabled(boolean multiThreadEnabled) {
+        this.multiThreadEnabled = multiThreadEnabled;
+    }
+    private class Field {
+        private String fieldKey;
+        private String plainTextField;
+        private String encryptedField;
+
+        private Field(String fieldKey, String plainTextField) {
+            this.fieldKey = fieldKey;
+            this.plainTextField = plainTextField;
+        }
+    }
+
+    private Field getFieldFromList(List<Field> fields, String fieldKey) {
+        for(Field field: fields) {
+            if(field.fieldKey.equals(fieldKey)) {
+                return field;
+            }
+        }
+
+        // If no field is found, throw IllegalArgumentException
+
+        throw new IllegalArgumentException("No field with given key was found");
     }
 }
