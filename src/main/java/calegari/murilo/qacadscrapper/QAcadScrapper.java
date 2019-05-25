@@ -167,7 +167,7 @@ public class QAcadScrapper {
 
         if(cookieMap == null) {
             loginToQAcad();
-            getAllSubjectsAndGrades();
+            return getAllSubjectsAndGrades();
         } else {
             System.out.println("QAcad: Getting response from grades page");
 
@@ -180,7 +180,7 @@ public class QAcadScrapper {
 
                 if (!isLogged(doc)) {
                     loginToQAcad();
-                    getAllSubjectsAndGrades();
+                    return getAllSubjectsAndGrades();
                 } else {
                     return parseGradesPage(doc);
                 }
