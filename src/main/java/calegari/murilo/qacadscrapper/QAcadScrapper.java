@@ -86,7 +86,11 @@ public class QAcadScrapper {
         }
     }
 
-    public Map<String, String> loginToQAcad(User user) throws ConnectException, LoginException {
+    public Map<String, String> loginToQAcad() throws ConnectException, LoginException {
+        return loginToQAcad(user);
+    }
+
+    private Map<String, String> loginToQAcad(User user) throws ConnectException, LoginException {
         System.out.println("QAcad: Logging into QAcad");
         loadAcadTokensAndCookies();
 
@@ -163,7 +167,7 @@ public class QAcadScrapper {
          */
 
         if(cookieMap == null) {
-            loginToQAcad(user);
+            loginToQAcad();
             getAllSubjectsAndGrades();
         } else {
             System.out.println("QAcad: Getting response from grades page");
@@ -176,7 +180,7 @@ public class QAcadScrapper {
                 Document doc = gradesResponse.charset(PAGE_CHARSET).parse();
 
                 if (!isLogged(doc)) {
-                    loginToQAcad(user);
+                    loginToQAcad();
                     getAllSubjectsAndGrades();
                 } else {
                     return parseGradesPage(doc);
