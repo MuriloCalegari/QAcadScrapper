@@ -227,7 +227,7 @@ public class QAcadScrapper {
                     for (Element gradeElement : element.select("tr.conteudoTexto > * tr.conteudoTexto")) {
                         Grade grade = new Grade();
 
-                        String name = gradeElement.child(1).ownText().substring(12).split(": ")[1];
+                        String name = gradeElement.child(1).ownText().substring(12).split(": ", 2)[1];
                         grade.setName(name);
 
                         String dateText = gradeElement.child(1).ownText().split(",")[0]; // e.g.: 03/05/2019
