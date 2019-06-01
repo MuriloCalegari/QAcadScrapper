@@ -1,11 +1,13 @@
 package calegari.murilo.qacadscrapper.utils;
 
+import java.time.LocalDate;
+
 public class Grade {
 
     private int acadSubjectId;
 
     private String gradeDescription;
-    private String date;
+    private LocalDate date;
 
     private float obtainedGrade;
     private float maximumGrade;
@@ -63,11 +65,11 @@ public class Grade {
         this.gradeDescription = gradeName;
     }
 
-    public String getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 

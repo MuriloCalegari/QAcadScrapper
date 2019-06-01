@@ -10,6 +10,9 @@ import org.jsoup.nodes.Element;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -231,7 +234,9 @@ public class QAcadScrapper {
                         grade.setName(name);
 
                         String dateText = gradeElement.child(1).ownText().split(",")[0]; // e.g.: 03/05/2019
-                        grade.setDate(dateText);
+                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                        LocalDate date = LocalDate.parse(dateText, dateTimeFormatter);
+                        grade.setDate(date);
 
                         float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
                         grade.setWeight(weight);
