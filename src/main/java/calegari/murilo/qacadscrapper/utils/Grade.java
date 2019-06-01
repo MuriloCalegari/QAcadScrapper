@@ -1,6 +1,6 @@
 package calegari.murilo.qacadscrapper.utils;
 
-import java.time.LocalDate;
+import org.threeten.bp.LocalDate;
 
 public class Grade {
 

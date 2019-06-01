@@ -16,6 +16,7 @@ dependencies {
 
     compile 'org.jsoup:jsoup:1.11.3'
     compile 'io.apisense:rhino-android:1.0'
+    implementation 'org.threeten:threetenbp:1.4.0'
 }
 
 sourceSets {
