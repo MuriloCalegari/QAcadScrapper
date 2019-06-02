@@ -31,7 +31,7 @@ try {
   subjects = qAcadScrapper.getAllSubjectsAndGrades(); // Automatically handles login if state is not logged
 } catch (LoginException e) {
   // DO SOMETHING IF LOGIN IS INVALID
-} catch (ConnectException e) {
+} catch (IOException e) {
   // DO SOMETHING IF THERE'S A CONNECTION EXCEPTION
 }
 ```
