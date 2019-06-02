@@ -23,15 +23,12 @@ Step 2. Add the dependency
   
 ## Usage
 ```java
-QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br/qacademico" /* URL TO QACAD PAGE */);
+User user = new User("USERNAME", "PASSWORD");
+QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br/qacademico", user);
 
 List<Subject> subjects = null;
 try {
-  User user = new User("USERNAME", "PASSWORD");
-
-  qAcadScrapper.loginToQAcad(user);
-
-  subjects = qAcadScrapper.getAllSubjectsAndGrades();
+  subjects = qAcadScrapper.getAllSubjectsAndGrades(); // Automatically handles login if state is not logged
 } catch (LoginException e) {
   // DO SOMETHING IF LOGIN IS INVALID
 } catch (ConnectException e) {
@@ -59,22 +56,30 @@ Logging into QAcad takes some resources since it needs to encrypt the credential
 
 `loginToQAcad()` returns the cookies as a `Map<String, String>`, so you can assign this to a variable and use it in the QAcadScrapper instance by calling `qAcadScrapper.setCookieMap(cookieMap)`. For example:
 
+Calling any retrieve data method automatically logins to QAcad, so you can call it and then retrieve the cookieMap by using getCookieMap()
+
 ```java
-qAcadScrapper.setCookieMap(cookieMap);
-  if (!qAcadScrapper.isLogged()) {
-    Log.d(TAG, "Status is not logged");
-    cookieMap = qAcadScrapper.loginToQAcad(user);
-    Log.d(TAG, "Finished logging into QAcad");
-  } else {
-    Log.d(TAG, "We've already logged");
-  }
+  qAcadScrapper.setCookieMap(cookieMap);
 
   Log.d(TAG, "Getting all subjects and grades from QAcad");
   List<Subject> subjectList = qAcadScrapper.getAllSubjectsAndGrades();
   Log.d(TAG, "All subjects and grades from QAcad were obtained!");
 ```
 
-getAllSubjectsAndGrades() will throw an IllegalStateException if the cookieMap results in a non logged state, so it is important that you check if the cookieMap is valid by using isLogged(), as it was done in the previous example.
+Or:
+
+```java
+  User user = new User("USERNAME", "PASSWORD");
+  QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br/qacademico", user);
+
+  Log.d(TAG, "Getting all subjects and grades from QAcad");
+  List<Subject> subjectList = qAcadScrapper.getAllSubjectsAndGrades();
+  Log.d(TAG, "All subjects and grades from QAcad were obtained!");
+  
+  Map<String, String> = qAcadScrapper.getCookieMap();
+```
+
+getAllSubjectsAndGrades() will throw an LoginException if the login results in a non logged state, so it is important that you catch it and do the appropriate handling of this error.
 
 ## Example of implemented library
 
