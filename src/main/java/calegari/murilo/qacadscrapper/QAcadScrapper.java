@@ -62,7 +62,7 @@ public class QAcadScrapper {
         this.user = user;
     }
 
-    public void loadAcadTokensAndCookies() throws IOException{
+    private void loadAcadTokensAndCookies() throws IOException{
         try {
             System.out.println("QAcad: Loading tokens and cookies");
             Connection.Response tokenResponse = Jsoup.connect(this.url + KEY_GENERATOR_PAGE)
@@ -117,8 +117,18 @@ public class QAcadScrapper {
             throw new LoginException("Invalid credentials, please check if you can login with them directly from the website");
         }
 
+        if (response != null) {
+            user.setFullName(parseFullNameFromMainPage(response));
+        }
+
         System.out.println("QAcad: Finished login into QAcad");
         return cookieMap;
+    }
+
+    private String parseFullNameFromMainPage(Document response) {
+        String fullWelcomeText = response.select("td.titulo > * td.titulo").first().ownText();
+
+        return fullWelcomeText.substring(fullWelcomeText.lastIndexOf(",") + 1, fullWelcomeText.lastIndexOf("!")).trim();
     }
 
     public boolean isLogged() {

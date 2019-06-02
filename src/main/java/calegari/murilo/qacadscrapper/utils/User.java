@@ -16,11 +16,12 @@ public class User {
 
     private boolean optimizeEncryptionEnabled = false;
 
-    private boolean multiThreadEnabled = false;
-    public static final int RHINO_OPTIMIZATION_LEVEL = 9;
+    private boolean multiThreadEnabled = true;
+    private static final int RHINO_OPTIMIZATION_LEVEL = 9;
 
     private String username;
     private String password;
+    private String fullName;
 
     private List<Field> fieldsToEncrypt = new ArrayList<>();
     private Map<String, String> encryptedFields = new HashMap<>();
@@ -201,6 +202,15 @@ public class User {
     public void setMultiThreadEnabled(boolean multiThreadEnabled) {
         this.multiThreadEnabled = multiThreadEnabled;
     }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
     private class Field {
         private String fieldKey;
         private String plainTextField;
