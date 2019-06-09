@@ -48,9 +48,11 @@ public class Subject {
         grade.setAcadSubjectId(this.id);
         this.gradeList.add(grade);
 
+        // Subject total grades should take into consideration the individual grade's weight
+
         if(!grade.isObtainedGradeNull()) {
-            this.obtainedGrade += grade.getObtainedGrade();
-            this.maximumGrade += grade.getMaximumGrade();
+            this.obtainedGrade += grade.getObtainedGrade() * grade.getWeight();
+            this.maximumGrade += grade.getMaximumGrade() * grade.getWeight();
         }
     }
 

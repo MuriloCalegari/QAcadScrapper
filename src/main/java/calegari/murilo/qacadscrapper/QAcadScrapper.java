@@ -126,9 +126,18 @@ public class QAcadScrapper {
     }
 
     private String parseFullNameFromMainPage(Document response) {
-        String fullWelcomeText = response.select("td.titulo > * td.titulo").first().ownText();
+        String fullWelcomeText;
+        String fullName = null;
+        try {
+            fullWelcomeText = response.select("td.titulo > * td.titulo").first().ownText();
+            fullName = fullWelcomeText.substring(fullWelcomeText.lastIndexOf(",") + 1, fullWelcomeText.lastIndexOf("!")).trim();
+        } catch (Exception ignored) {}
 
-        return fullWelcomeText.substring(fullWelcomeText.lastIndexOf(",") + 1, fullWelcomeText.lastIndexOf("!")).trim();
+        if(fullName != null) {
+            return fullName;
+        } else {
+            return null;
+        }
     }
 
     public boolean isLogged() {

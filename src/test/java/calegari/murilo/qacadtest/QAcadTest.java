@@ -17,8 +17,12 @@ import java.util.Properties;
 public class QAcadTest {
 
     @Test
-    public void testGetAllSubjects() throws IOException {
+    public void testLogin() throws IOException {
+        getLoggedQAcadInstance();
+    }
 
+    @Test
+    public void testGetAllSubjects() throws IOException {
         Properties p = new Properties();
         p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
 
@@ -56,5 +60,30 @@ public class QAcadTest {
         LocalDate date = LocalDate.parse(dateText, dateTimeFormatter);
 
         assertNotNull(date);
+    }
+
+    @Test
+    public void testGetFullName() throws IOException {
+        assertNotNull(getLoggedQAcadInstance().getUser().getFullName());
+    }
+
+    public QAcadScrapper getLoggedQAcadInstance() throws IOException {
+        Properties p = new Properties();
+        p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
+
+        User user = new User(p.get("login").toString(),  p.get("password").toString());
+        QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br/qacademico", user);
+
+        try {
+            qAcadScrapper.loginToQAcad();
+        } catch (LoginException e) {
+            e.printStackTrace();
+        }
+
+        if(qAcadScrapper.isLogged()) {
+            return qAcadScrapper;
+        }
+
+        return null;
     }
 }
