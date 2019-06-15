@@ -43,8 +43,6 @@ public class QAcadScrapper {
     }
 
     private Map<String, String> cookieMap;
-
-    private boolean isLogged = false;
     private Connection.Response gradesResponse;
 
     /**
@@ -95,31 +93,23 @@ public class QAcadScrapper {
         System.out.println("QAcad: Logging into QAcad");
         loadAcadTokensAndCookies();
 
-        Document response = null;
-        try {
-            user.encryptFields(keyA, keyB);
+        user.encryptFields(keyA, keyB);
 
-            System.out.println("QAcad: Validating login");
-            response = Jsoup.connect(this.url + VALIDATE_LOGIN_PAGE)
-                    .data("LOGIN", user.getEncryptedUsername())
-                    .data("SENHA", user.getEncryptedPassword())
-                    .data("Submit", user.getEncryptedSubmitText())
-                    .data("TIPO_USU", user.getEncryptedUserTypeText())
-                    .cookies(cookieMap)
-                    .post();
-            System.out.println("QAcad: Finished validating login");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        System.out.println("QAcad: Validating login");
+        Document response = Jsoup.connect(this.url + VALIDATE_LOGIN_PAGE)
+                .data("LOGIN", user.getEncryptedUsername())
+                .data("SENHA", user.getEncryptedPassword())
+                .data("Submit", user.getEncryptedSubmitText())
+                .data("TIPO_USU", user.getEncryptedUserTypeText())
+                .cookies(cookieMap)
+                .post();
+        System.out.println("QAcad: Finished validating login");
 
         if (!isLogged(response)) {
             throw new LoginException("Invalid credentials, please check if you can login with them directly from the website");
         }
 
-        if (response != null) {
-            user.setFullName(parseFullNameFromMainPage(response));
-        }
+        user.setFullName(parseFullNameFromMainPage(response));
 
         System.out.println("QAcad: Finished login into QAcad");
         return cookieMap;
@@ -140,34 +130,23 @@ public class QAcadScrapper {
         }
     }
 
-    public boolean isLogged() {
-        try {
-            if(cookieMap == null) {
-                return false;
-            } else {
-                Connection.Response loggedResponse = Jsoup.connect(this.url + MAIN_PAGE)
-                        .cookies(cookieMap)
-                        .execute();
-
-                return isLogged(loggedResponse.parse());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public boolean isLogged() throws IOException {
+        if(cookieMap == null) {
+            return false;
+        } else {
+            Connection.Response loggedResponse = Jsoup.connect(this.url + MAIN_PAGE)
+                    .cookies(cookieMap)
+                    .execute();
+            return isLogged(loggedResponse.parse());
         }
-
-
-        return this.isLogged;
     }
 
     private boolean isLogged(Document page) {
         if(page == null || cookieMap == null) {
-            isLogged = false;
             return false;
         } else if (page.select(String.format("strong:contains(%s)", NOT_LOGGED_ERROR_TEXT)).isEmpty()) {
-            isLogged = true;
             return true;
         } else {
-            isLogged = false;
             return false;
         }
     }
