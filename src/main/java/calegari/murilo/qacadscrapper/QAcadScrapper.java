@@ -1,17 +1,16 @@
 package calegari.murilo.qacadscrapper;
 
-import calegari.murilo.qacadscrapper.utils.Grade;
-import calegari.murilo.qacadscrapper.utils.Subject;
-import calegari.murilo.qacadscrapper.utils.User;
+import calegari.murilo.qacadscrapper.utils.*;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.format.DateTimeFormatter;
+import org.jsoup.select.Elements;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +19,11 @@ import java.util.Map;
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class QAcadScrapper {
 
-    private final String KEY_GENERATOR_PAGE = "/lib/rsa/gerador_chaves_rsa.asp?form=frmLogin&action=%2Fqacademico%2Flib%2Fvalidalogin%2Easp";
-    private final String VALIDATE_LOGIN_PAGE = "/lib/validalogin.asp";
-    private final String MAIN_PAGE = "/index.asp?t=2000";
-    private final String GRADES_PAGE = "/index.asp?t=2071";
+    private final String KEY_GENERATOR_PAGE = "/qacademico/lib/rsa/gerador_chaves_rsa.asp?form=frmLogin&action=%2Fqacademico%2Flib%2Fvalidalogin%2Easp";
+    private final String VALIDATE_LOGIN_PAGE = "/qacademico/lib/validalogin.asp";
+    private final String MAIN_PAGE = "/qacademico/index.asp?t=2000";
+    private final String GRADES_PAGE = "/qacademico/index.asp?t=2071";
+    private final String MATERIALS_PAGE = "/qacademico/index.asp?t=2061";
     private final String NOT_LOGGED_ERROR_TEXT = "Acesso Negado";
     private final String PAGE_CHARSET = "windows-1252"; // use document.charset in chrome developer mode to obtain it.
 
@@ -231,9 +231,7 @@ public class QAcadScrapper {
                         grade.setName(name);
 
                         String dateText = gradeElement.child(1).ownText().split(",")[0]; // e.g.: 03/05/2019
-                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                        LocalDate date = LocalDate.parse(dateText, dateTimeFormatter);
-                        grade.setDate(date);
+                        grade.setDate(Tools.getLocalDate(dateText));
 
                         float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
                         grade.setWeight(weight);
@@ -260,6 +258,65 @@ public class QAcadScrapper {
         System.out.println("QAcad: Finished parsing grades page");
 
         return subjectList;
+    }
+
+    public List<ClassMaterial> getAllMaterials() throws IOException, LoginException {
+        if(cookieMap == null) {
+            loginToQAcad();
+            return getAllMaterials();
+        } else {
+            Document materialsPage = Jsoup.connect(this.url + MATERIALS_PAGE)
+                    .cookies(cookieMap)
+                    .execute()
+                    .parse();
+
+            if(!isLogged(materialsPage)) {
+                loginToQAcad();
+                return getAllMaterials();
+            } else {
+                return parseMaterialsPage(materialsPage);
+            }
+        }
+    }
+
+    private List<ClassMaterial> parseMaterialsPage(Document materialsPage) throws MalformedURLException {
+        List<ClassMaterial> classesMaterials = new ArrayList<>();
+
+        Elements materialsTable = materialsPage.select("td:contains(Data de publicação)").last().parent().parent().children();
+
+        int lastFoundSubjectId = -1;
+
+        for(Element element: materialsTable) {
+            if(!element.attr("bgcolor").equals("#CCCCCC")) { // If it's not the header
+                if(element.className().equals("rotulo")) { // If it's a subject identification
+                    lastFoundSubjectId = Integer.valueOf(element.text().split(" - ", 2)[0]);
+                } else { // We can assume the following are materials referring to the last found subject id
+                    ClassMaterial classMaterial = new ClassMaterial();
+
+                    classMaterial.setSubjectId(lastFoundSubjectId);
+
+                    String dateText = element.child(0).ownText();
+                    classMaterial.setReleaseDate(Tools.getLocalDate(dateText));
+
+                    String completeUrlSuffix = element.select("a[href]").first().attr("href");
+
+                    String urlSuffix = completeUrlSuffix.substring(0, completeUrlSuffix.lastIndexOf("/") + 1);
+                    String urlFile = completeUrlSuffix.substring(completeUrlSuffix.lastIndexOf("/") + 1);
+                    String urlProtocol = element.baseUri().split(":", 2)[0];
+                    String host = this.url.substring(this.url.indexOf("/") + 2) + urlSuffix;
+                    URL downloadUrl = new URL(urlProtocol, host, urlFile);
+
+                    classMaterial.setDownloadURL(downloadUrl);
+
+                    String materialTitle = element.select("a").first().ownText();
+                    classMaterial.setTitle(materialTitle);
+
+                    classesMaterials.add(classMaterial);
+                }
+            }
+        }
+
+        return classesMaterials;
     }
 
     public String getUrl() {

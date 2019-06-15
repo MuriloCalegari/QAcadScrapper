@@ -1,6 +1,7 @@
 package calegari.murilo.qacadtest;
 
 import calegari.murilo.qacadscrapper.QAcadScrapper;
+import calegari.murilo.qacadscrapper.utils.ClassMaterial;
 import calegari.murilo.qacadscrapper.utils.Subject;
 import calegari.murilo.qacadscrapper.utils.User;
 import org.junit.Test;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Properties;
 
 public class QAcadTest {
+
+    private static QAcadScrapper qAcadScrapper;
 
     @Test
     public void testLogin() throws IOException, LoginException {
@@ -37,6 +40,15 @@ public class QAcadTest {
         }
 
         assertNotNull(subjects);
+    }
+
+    @Test
+    public void testGetAllMaterials() throws IOException, LoginException {
+        QAcadScrapper qAcadScrapper = getLoggedQAcadInstance();
+
+        List<ClassMaterial> classMaterials = qAcadScrapper.getAllMaterials();
+
+        assertNotNull(classMaterials);
     }
 
     @Test
@@ -63,15 +75,21 @@ public class QAcadTest {
         assertNotNull(getLoggedQAcadInstance().getUser().getFullName());
     }
 
-    public QAcadScrapper getLoggedQAcadInstance() throws IOException, LoginException {
-        Properties p = new Properties();
-        p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
+    private QAcadScrapper getLoggedQAcadInstance() throws IOException, LoginException {
+        if(qAcadScrapper == null /*|| !qAcadScrapper.isLogged()*/) {
+            Properties p = new Properties();
+            p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
 
-        User user = new User(p.get("login").toString(),  p.get("password").toString());
-        QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br/qacademico", user);
+            User user = new User(p.get("login").toString(), p.get("password").toString());
+            QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br", user);
 
-        qAcadScrapper.loginToQAcad();
+            qAcadScrapper.loginToQAcad();
 
-        return qAcadScrapper;
+            QAcadTest.qAcadScrapper = qAcadScrapper;
+
+            return qAcadScrapper;
+        } else {
+            return qAcadScrapper;
+        }
     }
 }
