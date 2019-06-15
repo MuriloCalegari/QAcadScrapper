@@ -17,23 +17,19 @@ import java.util.Properties;
 public class QAcadTest {
 
     @Test
-    public void testLogin() throws IOException {
+    public void testLogin() throws IOException, LoginException {
         getLoggedQAcadInstance();
     }
 
     @Test
-    public void testGetAllSubjects() throws IOException {
-        Properties p = new Properties();
-        p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
-
-        User user = new User(p.get("login").toString(),  p.get("password").toString());
-        QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br/qacademico", user);
+    public void testGetAllSubjects() throws IOException, LoginException {
+        QAcadScrapper qAcadScrapper = getLoggedQAcadInstance();
 
         List<Subject> subjects = null;
         try {
 
-            user.setOptimizeEncryptionEnabled(true);
-            user.setMultiThreadEnabled(true);
+            qAcadScrapper.getUser().setOptimizeEncryptionEnabled(true);
+            qAcadScrapper.getUser().setMultiThreadEnabled(true);
 
             subjects = qAcadScrapper.getAllSubjectsAndGrades();
         } catch (IOException | LoginException e) {
@@ -63,27 +59,19 @@ public class QAcadTest {
     }
 
     @Test
-    public void testGetFullName() throws IOException {
+    public void testGetFullName() throws IOException, LoginException {
         assertNotNull(getLoggedQAcadInstance().getUser().getFullName());
     }
 
-    public QAcadScrapper getLoggedQAcadInstance() throws IOException {
+    public QAcadScrapper getLoggedQAcadInstance() throws IOException, LoginException {
         Properties p = new Properties();
         p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
 
         User user = new User(p.get("login").toString(),  p.get("password").toString());
         QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br/qacademico", user);
 
-        try {
-            qAcadScrapper.loginToQAcad();
-        } catch (LoginException e) {
-            e.printStackTrace();
-        }
+        qAcadScrapper.loginToQAcad();
 
-        if(qAcadScrapper.isLogged()) {
-            return qAcadScrapper;
-        }
-
-        return null;
+        return qAcadScrapper;
     }
 }
