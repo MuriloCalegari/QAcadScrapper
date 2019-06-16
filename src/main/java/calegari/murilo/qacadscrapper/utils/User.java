@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static calegari.murilo.qacadscrapper.utils.Tools.log;
+
 public class User {
 
     private boolean optimizeEncryptionEnabled = false;
@@ -46,7 +48,7 @@ public class User {
         fieldsToEncrypt.add(new Field(USERTYPE_TEXT_KEY, "1"));
 
         try {
-            System.out.println("QAcad: Encrypting fields...");
+            log("Encrypting fields...");
 
             if(multiThreadEnabled) {
                 encryptFieldsSingleOrMultiThreaded(fieldsToEncrypt, keyA, keyB, true);
@@ -60,7 +62,7 @@ public class User {
                 encryptFieldsSingleOrMultiThreaded(fieldsToEncrypt, keyA, keyB, false);
             }
 
-            System.out.println("QAcad: Done encrypting fields...");
+            log("Done encrypting fields...");
         } catch (Exception e) {
             e.printStackTrace();
         }

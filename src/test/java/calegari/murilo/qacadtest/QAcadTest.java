@@ -3,17 +3,21 @@ package calegari.murilo.qacadtest;
 import calegari.murilo.qacadscrapper.QAcadScrapper;
 import calegari.murilo.qacadscrapper.utils.ClassMaterial;
 import calegari.murilo.qacadscrapper.utils.Subject;
+import calegari.murilo.qacadscrapper.utils.Tools;
 import calegari.murilo.qacadscrapper.utils.User;
 import org.junit.Test;
+import org.threeten.bp.LocalDate;
+
 import static org.junit.Assert.*;
 
 
 import javax.security.auth.login.LoginException;
 import java.io.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class QAcadTest {
 
@@ -64,8 +68,7 @@ public class QAcadTest {
     public void testExtractDate() {
         String dateText = "03/05/2019";
 
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate date = LocalDate.parse(dateText, dateTimeFormatter);
+        LocalDate date = Tools.getLocalDate(dateText);
 
         assertNotNull(date);
     }
@@ -75,12 +78,63 @@ public class QAcadTest {
         assertNotNull(getLoggedQAcadInstance().getUser().getFullName());
     }
 
+    @Test
+    public void testMultipleInstances() throws IOException, InterruptedException, LoginException {
+        log("Preparing for multiple instances test");
+
+        log("Logging to qAcad");
+
+        QAcadScrapper qAcadScrapper = getLoggedQAcadInstance();
+        Map<String, String> cookieMap = qAcadScrapper.getCookieMap();
+
+        User user = getDefaultUser() ;
+
+        AtomicReference<List<Subject>> subjects = new AtomicReference<>();
+        AtomicReference<List<ClassMaterial>> materials = new AtomicReference<>();
+
+        List<Thread> activeThreads = new ArrayList<>();
+
+        for(int i = 0; i <= 1; i++) {
+            int finalI = i;
+            Thread thread = new Thread(() -> {
+                QAcadScrapper threadedQAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br", user);
+
+                threadedQAcadScrapper.setCookieMap(cookieMap);
+
+                try {
+                    switch (finalI) {
+                        case 0:
+                            log("Getting subjects and grades");
+                            subjects.set(threadedQAcadScrapper.getAllSubjectsAndGrades());
+                            break;
+                        case 1:
+                            log("Getting materials");
+                            materials.set(threadedQAcadScrapper.getAllMaterials());
+                            break;
+                    }
+                } catch (IOException | LoginException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            thread.start();
+            activeThreads.add(thread);
+        }
+
+        for (int i = activeThreads.size() - 1; i >= 0; i--) {
+            // We have to wait until all threads are done to proceed.
+            activeThreads.get(i).join();
+            activeThreads.remove(i);
+        }
+
+        assertNotNull(subjects);
+        assertNotNull(materials);
+    }
+
     private QAcadScrapper getLoggedQAcadInstance() throws IOException, LoginException {
         if(qAcadScrapper == null /*|| !qAcadScrapper.isLogged()*/) {
-            Properties p = new Properties();
-            p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
 
-            User user = new User(p.get("login").toString(), p.get("password").toString());
+            User user = getDefaultUser();
             QAcadScrapper qAcadScrapper = new QAcadScrapper("https://academico3.cefetes.br", user);
 
             qAcadScrapper.loginToQAcad();
@@ -91,5 +145,20 @@ public class QAcadTest {
         } else {
             return qAcadScrapper;
         }
+    }
+
+    private void log(String message) {
+        System.out.println("Test: " + message);
+    }
+
+    private User getDefaultUser() {
+        Properties p = new Properties();
+        try {
+            p.load(new FileReader(new File("C:\\Users\\muril\\IdeaProjects\\QAcadScrapper\\src\\test\\resources\\keystore.properties")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new User(p.get("login").toString(), p.get("password").toString());
     }
 }

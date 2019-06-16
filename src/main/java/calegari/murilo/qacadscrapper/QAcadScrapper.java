@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static calegari.murilo.qacadscrapper.utils.Tools.log;
+
 
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class QAcadScrapper {
@@ -60,9 +62,9 @@ public class QAcadScrapper {
         this.user = user;
     }
 
-    private void loadAcadTokensAndCookies() throws IOException{
+    private void loadAcadTokensAndCookies() throws IOException {
         try {
-            System.out.println("QAcad: Loading tokens and cookies");
+            log("Loading tokens and cookies");
             Connection.Response tokenResponse = Jsoup.connect(this.url + KEY_GENERATOR_PAGE)
                     .method(Connection.Method.GET)
                     .execute();
@@ -78,7 +80,7 @@ public class QAcadScrapper {
 
             cookieMap = tokenResponse.cookies();
 
-            System.out.println("QAcad: Finished loading tokens and cookies");
+            log("Finished loading tokens and cookies");
         } catch (IOException e) {
             e.printStackTrace();
             throw new IOException("QAcad: Couldn't connect to Q-Acadêmico, please check if there's an internet connection available and if Q-Acadêmico website is working");
@@ -90,12 +92,12 @@ public class QAcadScrapper {
     }
 
     private Map<String, String> loginToQAcad(User user) throws IOException, LoginException {
-        System.out.println("QAcad: Logging into QAcad");
+        log("Logging into QAcad");
         loadAcadTokensAndCookies();
 
         user.encryptFields(keyA, keyB);
 
-        System.out.println("QAcad: Validating login");
+        log("Validating login");
         Document response = Jsoup.connect(this.url + VALIDATE_LOGIN_PAGE)
                 .data("LOGIN", user.getEncryptedUsername())
                 .data("SENHA", user.getEncryptedPassword())
@@ -103,7 +105,7 @@ public class QAcadScrapper {
                 .data("TIPO_USU", user.getEncryptedUserTypeText())
                 .cookies(cookieMap)
                 .post();
-        System.out.println("QAcad: Finished validating login");
+        log("Finished validating login");
 
         if (!isLogged(response)) {
             throw new LoginException("Invalid credentials, please check if you can login with them directly from the website");
@@ -111,7 +113,7 @@ public class QAcadScrapper {
 
         user.setFullName(parseFullNameFromMainPage(response));
 
-        System.out.println("QAcad: Finished login into QAcad");
+        log("Finished login into QAcad");
         return cookieMap;
     }
 
@@ -169,7 +171,7 @@ public class QAcadScrapper {
             loginToQAcad();
             return getAllSubjectsAndGrades();
         } else {
-            System.out.println("QAcad: Getting response from grades page");
+            log("Getting response from grades page");
 
             gradesResponse = Jsoup.connect(this.url + GRADES_PAGE)
                     .cookies(cookieMap)
@@ -191,7 +193,7 @@ public class QAcadScrapper {
     }
 
     private List<Subject> parseGradesPage(Document gradesPage) {
-        System.out.println("QAcad: Parsing grades page");
+        log("Parsing grades page");
 
         List<Subject> subjectList = new ArrayList<>();
 
@@ -255,7 +257,7 @@ public class QAcadScrapper {
             }
         }
 
-        System.out.println("QAcad: Finished parsing grades page");
+        log("Finished parsing grades page");
 
         return subjectList;
     }
@@ -265,6 +267,7 @@ public class QAcadScrapper {
             loginToQAcad();
             return getAllMaterials();
         } else {
+            log("Getting response from materials page");
             Document materialsPage = Jsoup.connect(this.url + MATERIALS_PAGE)
                     .cookies(cookieMap)
                     .execute()
@@ -280,6 +283,8 @@ public class QAcadScrapper {
     }
 
     private List<ClassMaterial> parseMaterialsPage(Document materialsPage) throws MalformedURLException {
+        log("Parsing materials page");
+
         List<ClassMaterial> classesMaterials = new ArrayList<>();
 
         Elements materialsTable = materialsPage.select("td:contains(Data de publicação)").last().parent().parent().children();
@@ -315,6 +320,8 @@ public class QAcadScrapper {
                 }
             }
         }
+
+        log("Finished parsing materials page");
 
         return classesMaterials;
     }

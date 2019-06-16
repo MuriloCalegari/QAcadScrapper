@@ -5,10 +5,29 @@ import org.threeten.bp.LocalDate;
 import java.net.URL;
 
 public class ClassMaterial {
+	private int id;
 	private String title;
 	private URL downloadURL;
 	private int subjectId;
 	private LocalDate releaseDate;
+
+	public ClassMaterial() {}
+
+	public ClassMaterial(int id, String title, URL downloadURL, LocalDate releaseDate, int subjectId) {
+		this.id = id;
+		this.title = title;
+		this.downloadURL = downloadURL;
+		this.subjectId = subjectId;
+		this.releaseDate = releaseDate;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
 
 	public URL getDownloadURL() {
 		return downloadURL;

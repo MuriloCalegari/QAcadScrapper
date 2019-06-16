@@ -10,4 +10,8 @@ public abstract class Tools {
 		return LocalDate.parse(dateText, dateTimeFormatter);
 	}
 
+	public static void log(String message) {
+		System.out.println("QAcad: " + message);
+	}
+
 }
