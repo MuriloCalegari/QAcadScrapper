@@ -305,13 +305,9 @@ public class QAcadScrapper {
 
                     String completeUrlSuffix = element.select("a[href]").first().attr("href");
 
-                    String urlSuffix = completeUrlSuffix.substring(0, completeUrlSuffix.lastIndexOf("/") + 1);
-                    String urlFile = completeUrlSuffix.substring(completeUrlSuffix.lastIndexOf("/") + 1);
-                    String urlProtocol = element.baseUri().split(":", 2)[0];
-                    String host = this.url.substring(this.url.indexOf("/") + 2) + urlSuffix;
-                    URL downloadUrl = new URL(urlProtocol, host, urlFile);
+                    URL downloadURL = new URL(this.url + completeUrlSuffix);
 
-                    classMaterial.setDownloadURL(downloadUrl);
+                    classMaterial.setDownloadURL(downloadURL);
 
                     String materialTitle = element.select("a").first().ownText();
                     classMaterial.setTitle(materialTitle);
