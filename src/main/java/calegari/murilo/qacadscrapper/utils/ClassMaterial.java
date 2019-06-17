@@ -60,4 +60,21 @@ public class ClassMaterial {
 	public void setTitle(String title) {
 		this.title = title;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(super.equals(obj)) {
+			return true;
+		}
+
+		if(obj instanceof ClassMaterial) {
+			ClassMaterial classMaterial = (ClassMaterial) obj;
+			return this.getSubjectId() == classMaterial.getSubjectId() &&
+					this.getTitle().equals(classMaterial.getTitle()) &&
+					this.getDownloadURL().equals(classMaterial.getDownloadURL()) &&
+					this.getReleaseDate().equals(classMaterial.getReleaseDate());
+		}
+
+		return false;
+	}
 }
