@@ -274,6 +274,7 @@ public class QAcadScrapper {
                     .parse();
 
             if(!isLogged(materialsPage)) {
+                log("Cookies have expired. Logging...");
                 loginToQAcad();
                 return getAllMaterials();
             } else {
