@@ -14,6 +14,7 @@ public class Subject {
     private Float maximumGrade = 0f;
 
     private List<Grade> gradeList = new ArrayList<>();
+    private List<ClassMaterial> materialsList = new ArrayList<>();
 
     public Subject() {}
 
@@ -110,5 +111,13 @@ public class Subject {
 
     public void setObtainedGrade(Float obtainedGrade) {
         this.obtainedGrade = obtainedGrade;
+    }
+
+    public List<ClassMaterial> getMaterialsList() {
+        return materialsList;
+    }
+
+    public void setMaterialsList(List<ClassMaterial> materialsList) {
+        this.materialsList = materialsList;
     }
 }

@@ -63,7 +63,7 @@ public class ClassMaterial {
 
 	@Override
 	public boolean equals(Object obj) {
-		if(super.equals(obj)) {
+		if(super.equals(obj)) { // If it's the same instance
 			return true;
 		}
 
