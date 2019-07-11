@@ -198,20 +198,21 @@ public class QAcadScrapper {
         List<Subject> subjectList = new ArrayList<>();
 
         for (Element element : gradesPage.select("tr.rotulo").first().parent().children()) {
-            Subject subject = new Subject();
 
             if (!element.className().equals("rotulo")) {
 
                 if (!element.children().select("strong").isEmpty()) { // If its a subject
+                    Subject subject = new Subject();
+
                     // Extracts all information from subject text
 
                     element = element.children().select("strong").first();
 
-                    String elementText = element.ownText();
-                    int subjectId = Integer.valueOf(elementText.split(" - ")[0]);
-                    String subjectClass = elementText.split(" - ")[1];
-                    String subjectName = elementText.split(" - ")[2];
-                    String subjectProfessor = elementText.split(" - ")[elementText.split(" - ").length - 1];
+                    String[] subjectCompleteDescription = element.ownText().split(" - ");
+                    int subjectId = Integer.valueOf(subjectCompleteDescription[0]);
+                    String subjectClass = subjectCompleteDescription[1];
+                    String subjectName = subjectCompleteDescription[2];
+                    String subjectProfessor = subjectCompleteDescription[subjectCompleteDescription.length - 1];
 
                     if (subjectProfessor.equals(subjectName)) { // if professor name is null, subjectProfessor should be equal to subjectName
                         subjectProfessor = null;
@@ -227,31 +228,38 @@ public class QAcadScrapper {
                     // If its not a subject then we can assume the following elements are grades referring to the last added subject.
 
                     for (Element gradeElement : element.select("tr.conteudoTexto > * tr.conteudoTexto")) {
-                        Grade grade = new Grade();
 
-                        String name = gradeElement.child(1).ownText().substring(12).split(": ", 2)[1];
-                        grade.setName(name);
+                        String dateAndText = gradeElement.child(1).ownText();
 
-                        String dateText = gradeElement.child(1).ownText().split(",")[0]; // e.g.: 03/05/2019
-                        grade.setDate(Tools.getLocalDate(dateText));
+                        if (dateAndText.charAt(0) != ',') { // If date is null, ignore this grade
 
-                        float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
-                        grade.setWeight(weight);
+                            Grade grade = new Grade();
 
-                        float maximumGrade = Float.valueOf(gradeElement.child(3).ownText().split(":")[1]);
-                        grade.setMaximumGrade(maximumGrade);
+                            String name = dateAndText.split(": ", 2)[1];
+                            grade.setName(name);
 
-                        float obtainedGrade = 0f;
-                        boolean isObtainedGradeNull;
-                        if (gradeElement.child(4).ownText().split(":").length != 1) { // Meaning "if there is a grade here"
-                            isObtainedGradeNull = false;
-                            obtainedGrade = Float.valueOf(gradeElement.child(4).ownText().split(":")[1]);
-                        } else {
-                            isObtainedGradeNull = true;
+                            String dateText = dateAndText.split(",")[0]; // e.g.: 03/05/2019
+                            grade.setDate(Tools.getLocalDate(dateText));
+
+                            float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
+                            grade.setWeight(weight);
+
+                            float maximumGrade = Float.valueOf(gradeElement.child(3).ownText().split(":")[1]);
+                            grade.setMaximumGrade(maximumGrade);
+
+                            float obtainedGrade = 0f;
+                            boolean isObtainedGradeNull;
+                            String[] obtainedGradeStringArray = gradeElement.child(4).ownText().split(":");
+                            if (obtainedGradeStringArray.length != 1) { // Meaning "if there is a grade here"
+                                isObtainedGradeNull = false;
+                                obtainedGrade = Float.valueOf(obtainedGradeStringArray[1]);
+                            } else {
+                                isObtainedGradeNull = true;
+                            }
+                            grade.setObtainedGrade(obtainedGrade);
+                            grade.setIsObtainedGradeNull(isObtainedGradeNull);
+                            subjectList.get(subjectList.size() - 1).addGrade(grade);
                         }
-                        grade.setObtainedGrade(obtainedGrade);
-                        grade.setIsObtainedGradeNull(isObtainedGradeNull);
-                        subjectList.get(subjectList.size() - 1).addGrade(grade);
                     }
                 }
             }
