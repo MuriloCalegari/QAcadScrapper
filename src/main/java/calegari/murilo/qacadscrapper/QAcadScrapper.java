@@ -33,8 +33,8 @@ public class QAcadScrapper {
 
     private String url;
 
-    private String keyA;
-    private String keyB;
+    private String publicKey;
+    private String modulus;
 
     public Map<String, String> getCookieMap() {
         return cookieMap;
@@ -45,7 +45,6 @@ public class QAcadScrapper {
     }
 
     private Map<String, String> cookieMap;
-    private Connection.Response gradesResponse;
 
     /**
      * QAcadScrapper can extract data from the Q-Acadêmico website in a simple way
@@ -71,12 +70,14 @@ public class QAcadScrapper {
 
             // Get the keypair used in Q-Acadêmico website
 
-            String keys = tokenResponse.body().substring(tokenResponse.body().indexOf("RSAKeyPair("), tokenResponse.body().lastIndexOf(")"));
+            String responseBody = tokenResponse.body();
+            int beginIndex = responseBody.indexOf("RSAKeyPair(");
+            String keys = responseBody.substring(beginIndex, responseBody.indexOf(")", beginIndex));
             keys = keys.substring(keys.indexOf("\"") + 1, keys.lastIndexOf("\""));
 
             // The websites use a third-party RSA library to encrypt all data, I'm just using the same internal logic they use
-            keyA = keys.substring(0, keys.indexOf("\"")); // Probably the public key
-            keyB = keys.substring(keys.lastIndexOf("\"") + 1); // Probably the modulus
+            publicKey = keys.substring(0, keys.indexOf("\"")); // Probably the public key
+            modulus = keys.substring(keys.lastIndexOf("\"") + 1); // Probably the modulus
 
             cookieMap = tokenResponse.cookies();
 
@@ -95,7 +96,7 @@ public class QAcadScrapper {
         log("Logging into QAcad");
         loadAcadTokensAndCookies();
 
-        user.encryptFields(keyA, keyB);
+        user.encryptFields(publicKey, modulus);
 
         log("Validating login");
         Document response = Jsoup.connect(this.url + VALIDATE_LOGIN_PAGE)
@@ -173,7 +174,7 @@ public class QAcadScrapper {
         } else {
             log("Getting response from grades page");
 
-            gradesResponse = Jsoup.connect(this.url + GRADES_PAGE)
+            Connection.Response gradesResponse = Jsoup.connect(this.url + GRADES_PAGE)
                     .cookies(cookieMap)
                     .execute();
 
