@@ -66,11 +66,16 @@ public class QAcadTest {
 
     @Test
     public void testExtractDate() {
-        String dateText = "03/05/2019";
+        String dateText = "26/06/2019";
+        LocalDate date1 = Tools.getLocalDate(dateText);
 
-        LocalDate date = Tools.getLocalDate(dateText);
+        dateText = "26/06/2019 12:32:00";
+        LocalDate date2 = Tools.getLocalDate(dateText);
 
-        assertNotNull(date);
+        LocalDate expectedDate = LocalDate.of(2019, 6, 26);
+
+        assertEquals(expectedDate, date1);
+        assertEquals(expectedDate, date2);
     }
 
     @Test
