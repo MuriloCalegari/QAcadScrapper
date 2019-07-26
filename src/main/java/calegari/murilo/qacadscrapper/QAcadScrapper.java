@@ -52,7 +52,7 @@ public class QAcadScrapper {
      */
     public QAcadScrapper(String url, User user) {
         if(url.endsWith("/")) { // remove the final bar from the url if necessary
-            // Don't know if this actually necessary but, since I'm using all URL suffixes starting with "/", it is nice to keep this
+            // Don't know if this is actually necessary, but, since I'm using all URL suffixes starting with "/", it is nice to keep this
             this.url = url.substring(0, url.length() - 1);
         } else {
             this.url = url;
