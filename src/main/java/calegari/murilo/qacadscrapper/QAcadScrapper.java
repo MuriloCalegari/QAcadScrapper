@@ -256,7 +256,7 @@ public class QAcadScrapper {
                             if(maximumGradeStringArray.length != 1) { // If maximum grade isn't null
                                 maximumGrade = Float.valueOf(maximumGradeStringArray[1]);
                             } else { // In some use cases, maximum grade might me null, here I choose to consider it equal to obtainedGrade
-                                maximumGrade = obtainedGrade;
+                                maximumGrade = 0f; // For instance, I'm considering maximumGrade as 0 if it is null
                                 grade.setIsMaximumGradeNull(true);
                             }
                             grade.setMaximumGrade(maximumGrade);
