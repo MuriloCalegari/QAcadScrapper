@@ -13,7 +13,8 @@ public class Grade {
     private float maximumGrade;
     private float weight = 1f; // By default is one
 
-    private boolean isObtainedGradeNull = false; // By default is false
+    private boolean isObtainedGradeNull = false; // By default it is false
+    private boolean isMaximumGradeNull = false; // By default it is false
 
     public int getAcadSubjectId() {
         return acadSubjectId;
@@ -95,5 +96,13 @@ public class Grade {
 
     public void setWeight(float weight) {
         this.weight = weight;
+    }
+
+    public void setIsMaximumGradeNull(boolean isMaximumGradeNull) {
+        this.isMaximumGradeNull = isMaximumGradeNull;
+    }
+
+    public boolean getIsMaximumGradeNull() {
+        return isMaximumGradeNull;
     }
 }

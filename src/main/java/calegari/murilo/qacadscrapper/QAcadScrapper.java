@@ -147,11 +147,7 @@ public class QAcadScrapper {
     private boolean isLogged(Document page) {
         if(page == null || cookieMap == null) {
             return false;
-        } else if (page.select(String.format("strong:contains(%s)", NOT_LOGGED_ERROR_TEXT)).isEmpty()) {
-            return true;
-        } else {
-            return false;
-        }
+        } else return page.select(String.format("strong:contains(%s)", NOT_LOGGED_ERROR_TEXT)).isEmpty();
     }
 
     public List<Subject> getAllSubjectsAndGrades(Map<String, String> cookieMap) throws IOException, LoginException {
@@ -215,7 +211,7 @@ public class QAcadScrapper {
                     String subjectName = subjectCompleteDescription[2];
                     String subjectProfessor = subjectCompleteDescription[subjectCompleteDescription.length - 1];
 
-                    if (subjectProfessor.equals(subjectName)) { // if professor name is null, subjectProfessor should be equal to subjectName
+                    if (subjectProfessor.equals(subjectName)) { // if professor name were null, subjectProfessor would be equal to subjectName
                         subjectProfessor = null;
                     }
 
@@ -230,35 +226,41 @@ public class QAcadScrapper {
 
                     for (Element gradeElement : element.select("tr.conteudoTexto > * tr.conteudoTexto")) {
 
-                        String dateAndText = gradeElement.child(1).ownText();
+                        String dateAndDescription = gradeElement.child(1).ownText();
 
-                        if (dateAndText.charAt(0) != ',') { // If date is null, ignore this grade
+                        if (dateAndDescription.charAt(0) != ',') { // If date is null, ignore this grade
 
                             Grade grade = new Grade();
 
-                            String name = dateAndText.split(": ", 2)[1];
+                            String name = dateAndDescription.split(": ", 2)[1];
                             grade.setName(name);
 
-                            String dateText = dateAndText.split(",")[0]; // e.g.: 03/05/2019
+                            String dateText = dateAndDescription.split(",")[0]; // e.g.: 03/05/2019
                             grade.setDate(Tools.getLocalDate(dateText));
 
                             float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
                             grade.setWeight(weight);
 
-                            float maximumGrade = Float.valueOf(gradeElement.child(3).ownText().split(":")[1]);
-                            grade.setMaximumGrade(maximumGrade);
-
                             float obtainedGrade = 0f;
-                            boolean isObtainedGradeNull;
                             String[] obtainedGradeStringArray = gradeElement.child(4).ownText().split(":");
                             if (obtainedGradeStringArray.length != 1) { // Meaning "if there is a grade here"
-                                isObtainedGradeNull = false;
                                 obtainedGrade = Float.valueOf(obtainedGradeStringArray[1]);
                             } else {
-                                isObtainedGradeNull = true;
+                                grade.setIsObtainedGradeNull(true);
                             }
                             grade.setObtainedGrade(obtainedGrade);
-                            grade.setIsObtainedGradeNull(isObtainedGradeNull);
+
+                            float maximumGrade;
+                            boolean isMaximumGradeNull;
+                            String[] maximumGradeStringArray = gradeElement.child(3).ownText().split(":");
+                            if(maximumGradeStringArray.length != 1) { // If maximum grade isn't null
+                                maximumGrade = Float.valueOf(maximumGradeStringArray[1]);
+                            } else { // In some use cases, maximum grade might me null, here I choose to consider it equal to obtainedGrade
+                                maximumGrade = obtainedGrade;
+                                grade.setIsMaximumGradeNull(true);
+                            }
+                            grade.setMaximumGrade(maximumGrade);
+
                             subjectList.get(subjectList.size() - 1).addGrade(grade);
                         }
                     }
