@@ -238,8 +238,14 @@ public class QAcadScrapper {
                             String dateText = dateAndDescription.split(",")[0]; // e.g.: 03/05/2019
                             grade.setDate(Tools.getLocalDate(dateText));
 
-                            float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
-                            grade.setWeight(weight);
+                            try {
+                                float weight = Float.valueOf(gradeElement.child(2).ownText().split(":")[1]);
+                                grade.setWeight(weight);
+                            } catch (Exception e) {
+                                // In case any error occurs while parsing weight, set to default weight 1
+                                grade.setWeight(1);
+                            }
+
 
                             float obtainedGrade = 0f;
                             String[] obtainedGradeStringArray = gradeElement.child(4).ownText().split(":");
